@@ -1,14 +1,57 @@
-import { Pressable, StyleSheet, Text } from "react-native"
+import React, { act, useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text } from "react-native";
+import { Audio } from 'expo-av';
 
-export const PomodoroButton = ({icon, title, onPress}) => {
+export const PomodoroButton = ({ active, icon, title, onPress }) => {
+    
+    const [sound, setSound] = useState();
+    const [source, setSource] = useState(null);
+
+    useEffect(() => {
+        if (active) {
+            setSource(require('../../assets/sounds/stop.mp3'))
+        } else {
+            setSource(require('../../assets/sounds/play.mp3'))
+        }
+    }, [active])
+    
+    useEffect(() => {
+        return sound
+            ? () => {
+                sound.unloadAsync();
+            }
+            : undefined;
+    }, [sound]);
+
+    function handlePress() {
+        playSound();
+        
+        if (onPress) {
+            onPress();
+        }
+    }
+
+    async function playSound() {
+        const { sound } = await Audio.Sound.createAsync(
+            source
+        );
+     
+        setSound(sound);
+
+        await sound.playAsync();
+    }
+
     return (
-        <Pressable style={styles.button} onPress={onPress}>
+        <Pressable
+            style={styles.button}
+            onPress={handlePress}
+        >
             {icon}
             <Text style={styles.buttonText}>
                 {title}
             </Text>
         </Pressable>
-    )
+    );
 }
 
 const styles = StyleSheet.create({

@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Image, StyleSheet, View } from "react-native";
 import { PomodoroButton } from "../components/PomodoroButton"
 import { ActionButton } from "../components/ActionButton"
 import { Timer } from "../components/Timer"
 import { IconPause, IconPlay } from "../components/Icons"
+import { Audio } from "expo-av";
 
 const pomodoro = [
   {
@@ -31,6 +32,7 @@ export default function Index() {
   const [timerType, setTimerType] = useState(pomodoro[1])
   const [seconds, setSeconds] = useState(pomodoro[1].initialValue)
   const [timerRunning, setTimerRunning] = useState(false)
+  const [sound, setSound] = useState();
 
   const timerRef = useRef(null)
 
@@ -59,6 +61,8 @@ export default function Index() {
     const id = setInterval(() => {
       setSeconds(oldState => {
         if (oldState === 0) {
+          Alert.alert('The time sold out')
+          playSound()
           clear()
           return timerType.initialValue
         }
@@ -68,12 +72,30 @@ export default function Index() {
     timerRef.current = id
   }
 
+  useEffect(() => {
+    return sound
+      ? () => {
+        sound.unloadAsync();
+      }
+      : undefined;
+  }, [sound]);
+
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync(
+      require('../assets/sounds/end.mp3')
+    );
+
+    setSound(sound);
+
+    await sound.playAsync();
+  }
+
   return (
     <View
       style={styles.container}
     >
-      <Image 
-        source={timerType.image} 
+      <Image
+        source={timerType.image}
         style={styles.image}
       />
       <View style={styles.actions}>
@@ -91,6 +113,7 @@ export default function Index() {
           totalSeconds={seconds}
         />
         <PomodoroButton
+          active={!timerRunning ? false : true}
           title={timerRunning ? 'stop' : 'start'}
           icon={timerRunning ? <IconPause /> : <IconPlay />}
           onPress={ToggleTimer}
